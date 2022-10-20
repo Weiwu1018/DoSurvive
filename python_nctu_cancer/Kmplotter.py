@@ -1,4 +1,3 @@
-#負責繪製Km plot
 from lifelines.statistics import logrank_test
 from plotly.graph_objs import Data
 from python_nctu_cancer.settings import CUSTOM_SETTINGS
@@ -38,7 +37,7 @@ class Kmplotter:
         mongo_client = pymongo.MongoClient(host=connection_string)
         mongo_db = mongo_client[db]
         return mongo_db
-    #取出目標基因的表現量
+
     def get_genome(self, category, cancer_type, meta_feature):
         cur_coll = self.mongodb_conn["cancer_genome_" + category.lower()]
         if "methylation" in category:
@@ -47,7 +46,7 @@ class Kmplotter:
             myquery = {"type": cancer_type, "MetaFeature": meta_feature}
         exclude_fields = {"category": False, "type": False, "Cgcite": False}
         return cur_coll.find(myquery, exclude_fields)
-    #221主機路徑 （/home/haowei/python_nctu_cancer/python_nctu_cancer/Supplemental）上的臨床資料取得
+
     def get_survival_data(self, cancer_type, excel_df):
 
         survival_data = excel_df.loc[excel_df['type'] == cancer_type]
@@ -55,7 +54,7 @@ class Kmplotter:
                                        'OS.time', 'DSS', 'DSS.time', 'DFI', 'DFI.time', 'PFI', 'PFI.time']]
 
         return survival_data
-    #目標基因表現量dataframe和臨床資料的dataframe join
+
     def get_exp(self, df1, df2):
         temp = df1['bcr_patient_barcode'].tolist()
 
@@ -96,7 +95,7 @@ class Kmplotter:
                  mode, mode+'.time', 'Expression']]
 
         return df, Med
-    #前端調整follow-up threshold的算法
+
     def follow_up_threshold(self, df, mode, time):
         limit = 1096
         if int(time) == 3:
@@ -126,19 +125,22 @@ class Kmplotter:
         df[mode+'.time'] = temp_time
         return df
 
-    # 表現量分群，default是設定median分群
+    # 表現量分群
     def seperate_group(self, df, Med, mode, time, L_per, H_per):
         time = int(time)
         L_per = int(L_per)
         H_per = int(H_per)
-        if L_per < 0:
+        if L_per == 50 and H_per == 50:
             L_per = 0
-        if L_per > 100:
-            L_per = 100
-        if H_per < 0:
             H_per = 0
+        if L_per < 0:
+            raise Exception('Invalid input percentage')
+        if L_per > 100:
+            raise Exception('Invalid input percentage')
+        if H_per < 0:
+            raise Exception('Invalid input percentage')
         if H_per > 100:
-            H_per = 100
+            raise Exception('Invalid input percentage')
         # 要先確定原本patient人數有超過一百個才可以讓使用者輸入，否則拒絕輸入  if df.shape[0] > 100:
 
         #if是指default的狀態和else是使用者輸入後
@@ -168,7 +170,7 @@ class Kmplotter:
         else:
             df = self.follow_up_threshold(df,mode,time)
             return df
-    #計算log-rank test的結果
+
     def log_rank(self, df, mode):
         date_df = df[f"{mode}.time"]
         event_df = df[mode]
@@ -179,7 +181,7 @@ class Kmplotter:
         results = logrank_test(
             date_df[i1], date_df[i2], event_observed_A=event_df[i1], event_observed_B=event_df[i2])
         return str(results.p_value)
-    #繪製Km plot
+
     def drawkmplot(self, df, mode):
         # print(df)
         date = df[mode+".time"]
@@ -197,14 +199,13 @@ class Kmplotter:
 
         a1 = kmf.plot(ci_show=False)
         line = a1.lines[0]
-        #抓出High group那條curve的x, y 座標
         plx = line.get_xdata()
         ply = line.get_ydata()
 
         kmf.fit(date[i2], event[i2], label="L")
         a2 = kmf.plot(ci_show=False)
         line2 = a2.lines[1]
-        #抓出 group那條curve的x, y 座標
+
         plx2 = line2.get_xdata()
         ply2 = line2.get_ydata()
 
@@ -213,14 +214,14 @@ class Kmplotter:
             {"name": f"L (n={paramLSize})", "x": plx2, "y": ply2}
         ]
         return chart_data
-    #繪圖的function
+
     def fig(self, data, layout):
         fig = go.Figure(
             data=data,
             layout=layout
         )
         fig.show()
-    #取出兩條線censor的x, y座標
+
     def get_censor(self, df, mode):
 
         date = df[mode+".time"]
@@ -261,11 +262,11 @@ class Kmplotter:
                 temp_y2.append(float(L_sur.loc[list_B[x]]))
 
         return temp_x1, temp_y1, temp_x2, temp_y2
-    #做圖時將天數轉換成月份，轉換要乘以0.03285
+
     def convert_days_to_Months(self, list):
         list = [x*0.03285 for x in list]
         return list
-    #Km plot下載下來的表格也是分群好的表格
+
     def get_download_data(self, category, cancer_type, meta_feature, mode, time, L_per, H_per):
         mode = mode.upper()
 
@@ -284,7 +285,7 @@ class Kmplotter:
         new_df = self.seperate_group(new_df, Med, mode, time, L_per, H_per)
 
         return new_df
-    #這function主要是category是lncRNA的時候才會用到，轉換lncRNA的gene symbol name用的
+
     def get_gene(self, metafeature):
         cur_coll = self.mongodb_conn["cancer_genome_lncrna"]
         myquery = {"type": 'BLCA', "MetaFeature": metafeature}
@@ -294,9 +295,10 @@ class Kmplotter:
         b = df['gene_symbol'].tolist()
         dic = dict(zip(a, b))
         return dic[metafeature]
-    #整個繪製Km plot的流程，一些圖片參數，和上面所有小function的串接
+
     def get(self, category, cancer_type, meta_feature, mode, time, L_per, H_per):
-        
+        if int(L_per) + int(H_per) > 100:
+            raise Exception('Invalid input percentagejj')
         if category == 'lncrna':
             gene = self.get_gene(meta_feature)
         elif category == 'mrna':
