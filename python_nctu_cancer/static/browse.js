@@ -520,7 +520,7 @@ function retrieveModalData(url, aoData, fnCallback) {
         }
     });
 }
-//Km plot follow-up threshold調整
+
 function chgChartTime(isModal) {
     var category, time;
     if (isModal) {
@@ -533,7 +533,7 @@ function chgChartTime(isModal) {
 
     drawChart(category, time)
 }
-//Km plot draw
+
 function drawChart(category, time) {
     var mode, L_per, H_per;
 
@@ -575,11 +575,7 @@ function drawChart(category, time) {
                 }
             },
             success: function (result, textStatus, jqXHR) {
-                if (result.status !== "success") {
-                    alert(result.message || 'error')
-                    return;
-                }
-                MY_DATA.chartJsonResult = result['data'];
+                MY_DATA.chartJsonResult = JSON.parse(result)
                 MY_DATA.chartCategory = category;
 
                 showChart();
@@ -593,7 +589,7 @@ function drawChart(category, time) {
 
     }
 }
-//Km plot show
+
 function showChart() {
     var $chart, $chartOption, divId;
     var mode, chartIndex, L_per, H_per;
@@ -925,7 +921,8 @@ function drawBoxPlot(gene, category) {
     } catch (e) {
 
     }
-//Expression的箱形圖繪製
+}
+
 function boxPlot(json, category, gene) {
     var x1 = [];
     var x2 = [];
@@ -1014,7 +1011,6 @@ function boxPlot(json, category, gene) {
  * @param {*} index 
  * @returns 
  */
-//根據不同的分析方法，取出column欄位資料
 function getSortColumn(category, type, subTab, index) {
     let mapping = [];
     var suffix;
@@ -1086,7 +1082,7 @@ function getSortColumn(category, type, subTab, index) {
         return mapping[0];
     }
 }
-//找到排序指標的欄位 例如os來說，OS_exp或是exp_p_val_OS
+
 function getCheckColumn(category, subTab) {
 
     var suffix;
@@ -1135,7 +1131,6 @@ function getCheckColumn(category, subTab) {
  * @param {*} subTab 
  * @returns 
  */
-//對push上前端的資料，做資料處理
 function getColumns(category, selectedType, subTab) {
     var results = [];
     var suffix;
@@ -1469,7 +1464,6 @@ function getOrder(category, type, subTab) {
  * @param {*} type 
  * @param {*} subTab 
  */
-//顯著影響存活的基因，利用fdr p-value<0.05來判斷給出紅色或綠色warning
 function showRowWarning(row, data, category, type, subTab) {
     var suffix;
 
@@ -1549,7 +1543,6 @@ function getCallbackData(data, category, type, subTab) {
  * Show current expression's custom table, prepare to click button and show correlation chart
  * @param {*} result
  */
-//這部分是在寫，mRNA和CpG sites的correlation表格
 function showCustomExpressionTable(result) {
     var htmls = [], i, val1, val2, val3, val4;
 
@@ -1618,7 +1611,7 @@ function showCustomExpressionTable(result) {
         drawCorrelationChart(data)
     })
 }
-// 畫出mRNA和CpG sites的散點圖
+
 function drawCorrelationChart(data) {
     try {
         startModalLoading();
