@@ -298,7 +298,7 @@ class Kmplotter:
 
     def get(self, category, cancer_type, meta_feature, mode, time, L_per, H_per):
         if int(L_per) + int(H_per) > 100:
-            raise Exception('Invalid input percentagejj')
+            raise Exception('Invalid input percentage')
         if category == 'lncrna':
             gene = self.get_gene(meta_feature)
         elif category == 'mrna':
